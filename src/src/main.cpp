@@ -5,6 +5,7 @@
 #include "injector/Injector.h"
 #include "utils/Console.h"
 #include <shellapi.h>
+#include <filesystem>
 #pragma comment(lib, "shell32.lib")
 #define skCrypt(x) x  
 
@@ -17,24 +18,52 @@ int main() {
         Sleep(3000);
         return 1;
     }
-    SetConsoleOpacity(230);
-	SetConsoleTitleA("Unity Mod Injector - by Pxcket & Z0mb1e");
-    system("cls");
-    show_logo();
-    loading_bar(2);  
 
-    if (!inject_mods()) {
-        set_console_error();
+    SetConsoleOpacity(230);
+    SetConsoleTitleA("Unity Mod Injector - by Pxcket & Z0mb1e");
+    system("cls");
+    Logo::Show();
+    loading_bar(2);
+
+    if (!Injector::CreateDirectorys()) {
+        ConsoleColors::Error();
+        std::cout << skCrypt("[!] Failed to create required directories.\n");
+        Sleep(3000);
+        return 1;
+    }
+
+    std::wstring modsDir = std::filesystem::current_path().wstring() + L"\\Misc\\Mods";
+    bool hasMods = false;
+
+    for (const auto& entry : std::filesystem::directory_iterator(modsDir)) {
+        if (entry.path().extension() == L".dll") {
+            hasMods = true;
+            break;
+        }
+    }
+
+    if (!hasMods) {
+        ConsoleColors::Warning();
+        std::cout << skCrypt("[!] No mods found in ./Misc/Mods/\n");
+        std::cout << skCrypt("[!] Please add your mod DLLs and restart the injector.\n");
+        ConsoleColors::Reset();
+        std::cout << skCrypt("[+] Closing in 5 seconds. Bye-Bye!\n");
+        Sleep(5000);
+        return 0;
+    }
+
+    if (!Injector::LoadMods()) {
+        ConsoleColors::Error();
         std::cout << skCrypt("[!] Mod loading failed.\n");
     }
     else {
-        set_console_success();
+        ConsoleColors::Success();
         std::cout << skCrypt("[+] Injection completed successfully!\n");
     }
 
-    set_console_magenta();
+    ConsoleColors::Magenta();
     std::cout << skCrypt("[+] Closing in 5 seconds. Bye-Bye!\n");
-    reset_console();
+    ConsoleColors::Reset();
 
     Sleep(5000);
     return 0;

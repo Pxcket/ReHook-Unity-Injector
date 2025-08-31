@@ -24,6 +24,7 @@
     <ProjectGuid>{abe5a908-c04e-4b85-b1dd-49adac22722e}</ProjectGuid>
     <RootNamespace>ReHookLoader</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>ReHookInjector</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

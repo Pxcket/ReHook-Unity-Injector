@@ -1,15 +1,60 @@
-﻿#include <iostream>
+﻿#include "injector.h"
+#include <iostream>
 #include <vector>
 #include <filesystem>
 #include <windows.h>
 #include <tlhelp32.h>
 #include "../utils/Console.h"
 #include "../utils/Process.h"
-
 #pragma comment(lib, "winmm.lib")
 
 const char* SOUND_PATH = ".\\Misc\\success.wav";
 
+bool Injector::CreateDirectorys() {
+    std::wstring miscDir = std::filesystem::current_path().wstring() + L"\\Misc";
+    std::wstring modsDir = miscDir + L"\\Mods";
+
+    bool createdAny = false;
+
+    if (!std::filesystem::exists(miscDir)) {
+        ConsoleColors::Warning();
+        std::cout << skCrypt("[*] Misc directory not found, generating...\n");
+        ConsoleColors::Reset();
+
+        if (!std::filesystem::create_directory(miscDir)) {
+            ConsoleColors::Error();
+            std::wcout << skCrypt("[!] Failed to create Misc directory: ") << miscDir << std::endl;
+            ConsoleColors::Reset();
+            return false;
+        }
+        createdAny = true;
+    }
+
+    if (!std::filesystem::exists(modsDir)) {
+        ConsoleColors::Warning();
+        std::cout << skCrypt("[*] Mods directory not found, generating...\n");
+        ConsoleColors::Reset();
+
+        if (!std::filesystem::create_directory(modsDir)) {
+            ConsoleColors::Error();
+            std::wcout << skCrypt("[!] Failed to create Mods directory: ") << modsDir << std::endl;
+            ConsoleColors::Reset();
+            return false;
+        }
+        createdAny = true;
+    }
+
+    if (createdAny) {
+        ConsoleColors::Success();
+        std::cout << skCrypt("[+] Required directories generated successfully!\n");
+        std::cout << skCrypt("[+] Please add your mod DLLs to ./Misc/Mods/ and restart the injector.\n");
+        ConsoleColors::Reset();
+        Sleep(2000);
+        return false; 
+    }
+
+    return true;
+}
 HWND find_unity_window() {
     HWND hwnd = nullptr;
     do {
@@ -54,9 +99,9 @@ std::string get_window_title(HWND hwnd) {
 }
 
 bool wait_for_unity_game() {
-    set_console_warning();
+    ConsoleColors::Warning();
     std::cout << skCrypt("[*] Waiting for a Unity game to launch...\n");
-    reset_console();
+    ConsoleColors::Reset();
 
     while (true) {
         HWND hwnd = find_unity_window();
@@ -66,13 +111,12 @@ bool wait_for_unity_game() {
                 std::string exeName = get_process_name(pid);
                 std::string title = get_window_title(hwnd);
 
-
                 std::cout << "\r" << std::string(80, ' ') << "\r";
 
-                set_console_success();
+                ConsoleColors::Success();
                 std::cout << skCrypt("[+] Game Detected!\n");
                 std::cout << skCrypt("[*] Executable: ") << exeName << std::endl;
-                reset_console();
+                ConsoleColors::Reset();
 
                 return true;
             }
@@ -83,9 +127,9 @@ bool wait_for_unity_game() {
 
 bool inject_dll(DWORD processId, const std::wstring& dllPath) {
     if (!std::filesystem::exists(dllPath)) {
-        set_console_error();
+        ConsoleColors::Error();
         std::wcout << skCrypt("[!] Not found: ") << dllPath << std::endl;
-        reset_console();
+        ConsoleColors::Reset();
         return false;
     }
 
@@ -120,23 +164,17 @@ bool inject_dll(DWORD processId, const std::wstring& dllPath) {
     return success;
 }
 
-
-bool inject_mods() {
-    std::wstring modsDir = std::filesystem::current_path().wstring() + L"\\Misc\\Mods";
-
-    set_console_success();
-    std::cout << skCrypt("[+] Scanning for mods...\n");
-	Sleep(500);
-    reset_console();
-
-    if (!std::filesystem::exists(modsDir)) {
-        set_console_error();
-        std::wcout << skCrypt("[!] Mods folder missing: \"") << modsDir << L"\"\n";
-        std::cout << skCrypt("[!] Create it and place your .dll files inside.\n");
-        Sleep(500);
-        reset_console();
+bool Injector::LoadMods() {
+    if (!Injector::CreateDirectorys()) {
         return false;
     }
+
+    std::wstring modsDir = std::filesystem::current_path().wstring() + L"\\Misc\\Mods";
+
+    ConsoleColors::Success();
+    std::cout << skCrypt("[+] Scanning for mods...\n");
+    Sleep(500);
+    ConsoleColors::Reset();
 
     std::vector<std::wstring> dlls;
     for (const auto& entry : std::filesystem::directory_iterator(modsDir)) {
@@ -147,23 +185,24 @@ bool inject_mods() {
 
     switch (dlls.size()) {
     case 0:
-        set_console_error();
-        std::cout << skCrypt("[-] No mods found. Place .dll files in ./Misc/Mods/\n");
-        reset_console();
+        ConsoleColors::Warning();
+        std::cout << skCrypt("[!] No mods found. Place .dll files in ./Misc/Mods/\n");
+        std::cout << skCrypt("[!] The program will close and wait for you to add mods.\n");
+        ConsoleColors::Reset();
+        Sleep(3000);
         return false;
     case 1:
-        set_console_success();
+        ConsoleColors::Success();
         std::cout << skCrypt("[+] Found 1 mod.\n");
         Sleep(500);
         break;
     default:
-        set_console_success();
+        ConsoleColors::Success();
         std::cout << skCrypt("[+] Found ") << dlls.size() << skCrypt(" mods.\n");
         Sleep(500);
         break;
     }
-    reset_console();
-
+    ConsoleColors::Reset();
 
     if (!wait_for_unity_game()) {
         return false;
@@ -171,35 +210,35 @@ bool inject_mods() {
 
     HWND hwnd = find_unity_window();
     if (!hwnd) {
-        set_console_error();
+        ConsoleColors::Error();
         std::cout << skCrypt("[!] Game window vanished!\n");
         Sleep(500);
-        reset_console();
+        ConsoleColors::Reset();
         return false;
     }
 
     DWORD pid = get_pid_from_window(hwnd);
     if (!pid) {
-        set_console_error();
+        ConsoleColors::Error();
         std::cout << skCrypt("[!] Failed to get process ID.\n");
         Sleep(500);
-        reset_console();
+        ConsoleColors::Reset();
         return false;
     }
 
     std::string exeName = get_process_name(pid);
 
-    set_console_success();
+    ConsoleColors::Success();
     std::cout << skCrypt("[+] Target: ") << exeName << " (PID: " << pid << ")" << std::endl;
     Sleep(500);
     std::cout << skCrypt("[*] Injecting mods...\n");
     Sleep(500);
-    reset_console();
+    ConsoleColors::Reset();
 
     int injected = 0;
     for (const auto& dll : dlls) {
         if (inject_dll(pid, dll)) {
-            set_console_success();
+            ConsoleColors::Success();
             std::wcout << skCrypt("[+] Injected: ") << dll << std::endl;
 
             PlaySoundA(SOUND_PATH, NULL, SND_FILENAME | SND_ASYNC);
@@ -207,16 +246,18 @@ bool inject_mods() {
             injected++;
         }
         else {
-            set_console_error();
+            ConsoleColors::Error();
             std::wcout << skCrypt("[!] Failed: ") << dll << std::endl;
         }
-        reset_console();
+        ConsoleColors::Reset();
         Sleep(50);
     }
 
-    set_console_success();
+    ConsoleColors::Success();
     std::cout << skCrypt("[+] ") << injected << skCrypt(" / ") << dlls.size() << skCrypt(" mods injected.\n");
-    reset_console();
+    ConsoleColors::Reset();
 
     return true;
 }
+
+

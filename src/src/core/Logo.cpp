@@ -1,8 +1,9 @@
 #include <iostream>
 #include "../utils/Console.h"
+#include "Logo.h"
 
-void show_logo() {
-    set_console_purple();
+void Logo::Show() {
+    ConsoleColors::Purple();
 
     std::cout
         << skCrypt(" ___________________________________________\n")
@@ -25,5 +26,5 @@ void show_logo() {
         << skCrypt("\n")
         << skCrypt("\n");
 
-    reset_console();
+    ConsoleColors::Reset();
 }

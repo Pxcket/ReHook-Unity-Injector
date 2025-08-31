@@ -1,3 +1,7 @@
 #pragma once
 
-void show_logo();
+
+namespace Logo
+{
+	void Show();
+}

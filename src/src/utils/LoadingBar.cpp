@@ -6,9 +6,9 @@
 #include "../core/Logo.h"
 
 void loading_bar(int duration_seconds) {
-    set_console_purple();
+    ConsoleColors::Purple();
     std::cout << skCrypt("[*] Initializing mod loader...") << std::endl;
-    set_console_magenta();
+    ConsoleColors::Magenta();
 
     const int total_steps = 20;
     const int step_duration = (duration_seconds * 1000) / total_steps;
@@ -25,7 +25,7 @@ void loading_bar(int duration_seconds) {
         bar += "]";
 
 
-        std::cout << "\r> " << bar << " " << percent << "%    " << std::flush;
+        std::cout << "\r> " << bar << " " << percent << "%    " << std::flush; //Maybe Driver Loading And not just looking cool
         std::this_thread::sleep_for(std::chrono::milliseconds(step_duration));
     }
 
@@ -34,8 +34,8 @@ void loading_bar(int duration_seconds) {
 
     std::cout << "\r" << std::string(80, ' ') << "\r"; 
 	system("cls");
-    show_logo();
-    set_console_success();
+    Logo::Show();
+    ConsoleColors::Success();
     std::cout << skCrypt("[+] Initialization complete!") << std::endl;
-    reset_console();
+    ConsoleColors::Reset();
 }

@@ -1,3 +1,7 @@
 #pragma once
 
-bool inject_mods();
+class Injector {
+public:
+    static bool LoadMods();
+	static bool CreateDirectorys();
+};
